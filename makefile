@@ -1,0 +1,12 @@
+run: main.o
+	./main.o -i imagen_entrada.pgm -s imagen_salida1.pgm -p imagen_salida2.pgm           
+#-N ancho_imagen
+
+main.o: main.c funciones.o
+	gcc main.c -o main.o funciones.o -lm
+
+funciones.o: funciones.c funciones.h
+	gcc -c funciones.c -lm
+
+clean:
+	rm main.o funciones.o
