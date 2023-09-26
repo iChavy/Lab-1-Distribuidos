@@ -6,6 +6,8 @@
 
 
 // includes de paralelo
+#include <immintrin.h> //__mm128i 16 x 8 bits
+
 
 
 // definicion de las funciones

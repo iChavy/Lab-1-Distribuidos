@@ -77,4 +77,10 @@ unsigned char* leer_imagen(char *imagen_entrada){
 
 //  implementar paralelo usando SIMD
 
+void paralelo(unsigned char * arreglo){
+    // Creaciones de registros
+    __m128i registro_main[5];
+    
+    
 
+}

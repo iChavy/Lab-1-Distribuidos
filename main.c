@@ -31,9 +31,10 @@ int main(int argc, char *argv[]){
 
     unsigned char * arreglo = leer_imagen(imagen_entrada);
 
-    for(int i = 0; i < (512*512); i++){
+    /*for(int i = 0; i < (512*512); i++){
             printf("arreglo[%d]: %d\n", i, arreglo[i]);
         }
+        */
 
     return 0;
 }
