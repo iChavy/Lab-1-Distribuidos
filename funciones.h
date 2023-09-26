@@ -14,3 +14,4 @@
 //float sumar(float, float);
 
 unsigned char* leer_imagen(char *imagen_entrada);
+void paralelo(unsigned char * arreglo, int filas);

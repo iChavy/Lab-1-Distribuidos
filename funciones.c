@@ -66,7 +66,6 @@ unsigned char* leer_imagen(char *imagen_entrada){
 
 
     // Liberar memoria
-    free(arreglo);
     // Cierro la imagen
     fclose(imagen);
     return arreglo;
@@ -77,10 +76,73 @@ unsigned char* leer_imagen(char *imagen_entrada){
 
 //  implementar paralelo usando SIMD
 
-void paralelo(unsigned char * arreglo){
-    // Creaciones de registros
+void paralelo(unsigned char * arreglo, int filas){
+    // Creacion de registros
     __m128i registro_main[5];
+    int modulo;
+    float fila_actual;
+    
+    // Carga de registros cada 16
+    //////////////////////////////////////////////7
+    // Primer registro (arriba) parte del 1 y termina en fila-2
+    // Segundo registro (izq) parte de fila+1 (513) termina en (fila*2)-2
+    // Tercer registro (centro) parte de (fila*2)+1 (513) termina en (fila*3)-2
+    // Cuarto registro (derecha) parte de (fila*3)+1 (513) termina en (fila*4)-2
+    // Quinto registro (abajo) parte de (fila*4)+1 (513) termina en (fila*5)-2
+    ////////////////////////////////////////////////////
+     for (int i = (filas+1); i < (filas*filas); i+16) {
+
+        if ((i+16) < (filas-2)){
+            //cargar------------------------------------------------------
+
+        }
+        
+        // Si llega al final de la columna-1, el centro de mi elemento estructural se mueve al comienzo de la fila de abajo y le sumo 1
+        else if ((i+16) == (filas-2)){    
+            // cargo registros---------------------------------------------------------------
+
+
+            fila_actual = (int)(i/filas);
+            // Se obtiene el primer valor de la siguiente fila y se retrocede 15 para que el for lo mueva a la fila siguiente + 1 columna.
+            i = ((fila_actual+1)*filas) - 15;
+        }
+        // Si llega al final de la columna de la imagen, creo un arreglo aux de 0s de 3 filas y 16 columnas 
+        else if ((i+16) > (filas-2)){
+            //modulo = (filas-2)%16;SS
+            // crea arreglo aux, 16 para guardar los registros, +1 porque necesito guardar desde la columna anterior, +1 para que 
+            // el registro derecha pueda llegar hasta el final
+            int arreglo_aux[3*18] = {0};
+
+            //--------funcion que llena el arreglo aux con valores del arreglo
+            int i_aux = i;
+            // Recorro desde i-1 hasta el final de cada columna y lo almaceno en arreglo_aux
+            for (int j = 0; j < (((filas)%16)+2); j++){
+                // Parte de la fila anterior - 1 para considerar el lado izquierdo del ES.
+                arreglo_aux[j] = arreglo[i_aux-filas-1];
+                arreglo_aux[j+18] = arreglo[i_aux];
+                arreglo_aux[j+36] = arreglo[i_aux+(filas)];
+
+                i_aux += 1;
+            }
+            
+            // cargar a registros con arreglo aux----------------------------------
+
+
+            fila_actual = (int)(i/filas);
+            
+            // Se obtiene el primer valor de la siguiente fila y se retrocede 15 para que el for lo mueva a la fila siguiente + 1 columna.
+            i = ((fila_actual+1)*filas) - 15;
+        }
+        
+    
+
+     }
+
+    
+}
+
+
     
     
 
-}
+
