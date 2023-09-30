@@ -8,4 +8,4 @@ funciones.o: funciones.c funciones.h
 	gcc -c funciones.c -lm
 
 clean:
-	rm main.o funciones.o imagen_salida2.pgm
+	rm main.o funciones.o imagen_salida1.pgm imagen_salida2.pgm

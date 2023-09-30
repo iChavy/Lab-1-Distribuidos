@@ -6,6 +6,9 @@ int main(int argc, char *argv[]){
 	//Nombre de la imagen de entrada y de las imagenes de salida
     char *imagen_entrada, *imagen_salida1, *imagen_salida2;
 
+    clock_t inicio, fin;
+    double tiempo;
+
     int filas, maximo;
 	
 	// Recibe entradas por línea de comandos
@@ -32,17 +35,20 @@ int main(int argc, char *argv[]){
     }
 
     unsigned char * arreglo = leer_imagen(imagen_entrada, &filas, &maximo);
-    paralelo(arreglo, &filas, &maximo);
+    crear_imagen_salida(&filas, &maximo);
     
-    // Liberar memoria
+    inicio = clock();
+    secuencial(arreglo, &filas, &maximo);
+    fin = clock();
+    tiempo = (double)(fin - inicio) / CLOCKS_PER_SEC;
+    printf("Tiempo secuencial: %f\n", tiempo);
+
+    inicio = clock();
+    paralelo(arreglo, &filas, &maximo);
+    fin = clock();
+    tiempo = (double)(fin - inicio) / CLOCKS_PER_SEC;
+    printf("Tiempo paralelo: %f\n", tiempo);   
+
     free(arreglo);
-    printf("Se ha liberado la memoria\n");
-
-
-    /*for(int i = 0; i < (512*512); i++){
-            printf("arreglo[%d]: %d\n", i, arreglo[i]);
-        }
-        */
-
     return 0;
 }

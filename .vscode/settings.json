@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "funciones.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "immintrin.h": "c"
     }
 }
