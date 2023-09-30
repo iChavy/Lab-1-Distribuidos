@@ -72,8 +72,10 @@ unsigned char* leer_imagen(char *imagen_entrada, int* filas, int* maximo){
 void paralelo(unsigned char * arreglo, int *columna, int *maximo){
     // Creacion de registros
     __m128i registro_main[5];
+
+    //
     int modulo;
-    int fila_actual, valor_final_fila;
+    int fila_actual, valor_final_fila, retroceso;
     int filas = *columna;
 
     // Creo arreglo de salida
@@ -106,16 +108,18 @@ void paralelo(unsigned char * arreglo, int *columna, int *maximo){
     
     ////////////////////////////////////////////////////
     // -1 porque no considero el borde
-     for (int i = (filas+1); i < ((filas*(filas-1)-2)); i+=16) {
+     for (int i = (filas+1); i < ((filas*(filas-1))); i+=16) {
         fila_actual = (int)(i/filas);
-        valor_final_fila = ((fila_actual+1)*filas-2);
+        valor_final_fila = ((fila_actual+1)*filas)-1;
+        retroceso = 0;
         
         //printf("fila actual: %i\n", fila_actual);
         //printf("El resultado es %s", (i + 16) < (filas - 2) ? "verdadero\n" : "falso\n");
         //printf("i+16 = %d       y      filas-2 = %d\n", (i+16), (filas - 2));
-        //printf("fila actual: %i    y    el valor i =%i\n", fila_actual, i);
+        printf("fila actual: %i    ;    el valor i =%i   ;   valor final fila= %i\n" , fila_actual, i, valor_final_fila);
 
         if ((i+16) < valor_final_fila){
+            //printf("entro al if\n");
             //cargar------------------------------------------------------
             // Primer registro (arriba) parte del 1 y termina en fila-2
             // Segundo registro (izq) parte de fila+1 (513) termina en (fila*2)-2
@@ -129,12 +133,13 @@ void paralelo(unsigned char * arreglo, int *columna, int *maximo){
             registro_main[3] = _mm_loadu_si128((__m128i *) &arreglo[i+1]);      // derecha
             registro_main[4] = _mm_loadu_si128((__m128i *) &arreglo[i+filas]);  // abajo
 
-            //printf("fila actual: %i    y    el valor i =%i\n", fila_actual, i);
+            
 
         }
         
         // Si llega al final de la columna-1, el centro de mi elemento estructural se mueve al comienzo de la fila de abajo y le sumo 1
-        else if ((i+16) == valor_final_fila){    
+        else if ((i+16) == valor_final_fila-1){   
+            //printf("entro al else if\n"); 
             // cargo registros---------------------------------------------------------------
 
             registro_main[0] = _mm_loadu_si128((__m128i *) &arreglo[i-filas]);  // arriba
@@ -143,17 +148,24 @@ void paralelo(unsigned char * arreglo, int *columna, int *maximo){
             registro_main[3] = _mm_loadu_si128((__m128i *) &arreglo[i+1]);      // derecha
             registro_main[4] = _mm_loadu_si128((__m128i *) &arreglo[i+filas]);  // abajo
 
-            fila_actual = (int)(i/filas);
-            // Se obtiene el primer valor de la siguiente fila y se retrocede 15 para que el for lo mueva a la fila siguiente + 1 columna.
-            i = ((fila_actual+1)*filas) - 15;
+            // Se obtiene el primer valor de la siguiente fila y se retrocede 15 para que el for lo mueva a la fila siguiente + 1 columna.-------
+
+            i = valor_final_fila + 1 - 15;
         }
         // Si llega al final de la columna de la imagen, creo un arreglo aux de 0s de 3 filas y 16 columnas 
+
+        /*
         else if ((i+16) > valor_final_fila){
             //modulo = (filas-2)%16;SS
 
             // crea arreglo aux, 16 para guardar los registros, +1 porque necesito guardar desde la columna anterior, +1 para que 
             // el registro derecha pueda llegar hasta el final
-            int arreglo_aux[3*18] = {0};
+            int arreglo_aux[3*18];
+
+            //inicio arreglo aux con 50
+            for (int j = 0; j < 3*18; j++){
+                arreglo_aux[j] = 0;
+            }
 
             //--------funcion que llena el arreglo aux con valores del arreglo
             int i_aux = i;
@@ -177,12 +189,43 @@ void paralelo(unsigned char * arreglo, int *columna, int *maximo){
                 registro_main[4] = _mm_loadu_si128((__m128i *) &arreglo_aux[j+(2*filas_aux)]);      // abajo
             }
 
+            // imprimo arreglo aux
+            for (int j = 0; j < 3; j++){
+                for (int k = 0; k < 18; k++){
+                    printf("%d\t", arreglo_aux[j*18+k]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+            
+
             fila_actual = (int)(i/filas);
             
             // Se obtiene el primer valor de la siguiente fila y se retrocede 15 para que el for lo mueva a la fila siguiente + 1 columna.
             i = ((fila_actual+1)*filas) - 15;
         }
         
+        */
+
+       // Si no alcanzo a tomar 16 valores en la fila retrocedo
+        else {
+            retroceso = (filas*(fila_actual+1))-1-i;
+            retroceso = 16- retroceso;
+            // le resto 16 porque el for le suma 16
+            i = i - retroceso;
+
+            // Cargo los registros
+            registro_main[0] = _mm_loadu_si128((__m128i *) &arreglo[i-filas]);  // arriba
+            registro_main[1] = _mm_loadu_si128((__m128i *) &arreglo[i-1]);      // izquierda
+            registro_main[2] = _mm_loadu_si128((__m128i *) &arreglo[i]);        // centro
+            registro_main[3] = _mm_loadu_si128((__m128i *) &arreglo[i+1]);      // derecha
+            registro_main[4] = _mm_loadu_si128((__m128i *) &arreglo[i+filas]);  // abajo
+            
+            // me muevo al final de la fila y retrocedo 16
+            i = valor_final_fila - 16;
+            printf("valor i: %d\n", i);         
+
+        }
         // Calculo de maximo de los 5 registros
         __m128i maximo = _mm_max_epu8(registro_main[0], registro_main[1]);
         maximo = _mm_max_epu8(maximo, registro_main[2]);
@@ -190,10 +233,24 @@ void paralelo(unsigned char * arreglo, int *columna, int *maximo){
         maximo = _mm_max_epu8(maximo, registro_main[4]);
 
         // Guardo el maximo en el arreglo de salida
-        _mm_storeu_si128((__m128i *) &arreglo_salida[i], maximo);    
+        _mm_storeu_si128((__m128i *) &arreglo_salida[i], maximo);   
 
-     }
+        // Si al aumentar 16 quedo en el final de la fila, sumo 2 para que el for me lleve a la siguiente fila + un espacio a la derecha para no considerar el borde
+        if ((i+16) == valor_final_fila){
+            i += 2;
+        }
+         
 
+    }
+    //printf("fin for\n");
+    // imprimo el arreglo de salida
+    /*
+    for(int i = 0; i < (filas*filas); i++){
+        printf("%d\t", arreglo_salida[i]);
+        }
+    */
+   
+    
      // Escribo la imagen de salida
     fwrite(arreglo_salida, sizeof(unsigned char), (filas*filas), imagen_salida);
     fclose(imagen_salida);
