@@ -57,14 +57,16 @@ unsigned char* leer_imagen(char *imagen_entrada, int* filas, int* maximo){
 Descripción:    Crea la imagen de salida con el formato .pgm
 Entrada:        filas: entero que representa el número de filas y columnas de la imagen
                 maximo: entero que representa el valor máximo de la imagen
+                nombre_salida1: nombre de la imagen de salida del proceso secuencial
+                nombre_salida2: nombre de la imagen de salida del proceso paralelo
 Salida:         No posee retorno
 */
-void crear_imagen_salida(int *filas, int *maximo){
+void crear_imagen_salida(int *filas, int *maximo, char *nombre_salida1, char *nombre_salida2){
 
     // Creacion imagenes de salida
     FILE *imagen_salida1, *imagen_salida2;
-    imagen_salida1 = fopen("imagen_salida1.pgm", "wb");
-    imagen_salida2 = fopen("imagen_salida2.pgm", "wb");
+    imagen_salida1 = fopen(nombre_salida1, "wb");
+    imagen_salida2 = fopen(nombre_salida2, "wb");
 
     // Escribo el encabezado de las imagenes
     fprintf(imagen_salida1, "P5\n");
@@ -131,9 +133,10 @@ Descripción:    Recorre la imagen de entrada con un elemento estructural en for
 Entrada:        arreglo: arreglo que contiene los valores de la imagen de entrada
                 filas: entero que representa el número de filas y columnas de la imagen
                 maximo: entero que representa el valor máximo de la imagen
+                nombre_salida1: nombre de la imagen de salida del proceso secuencial
 Salida:         No posee retorno
 */
-void secuencial(unsigned char * arreglo, int *fila, int *maximo){
+void secuencial(unsigned char * arreglo, int *fila, int *maximo, char *nombre_salida1){
     // Creo arreglo de salida
     unsigned char *arreglo_salida = (unsigned char *)malloc(((*fila)*(*fila))*sizeof(unsigned char));
     // Arreglo auxiliar que se utiliza para guardar los valores actuales del elemento estructural
@@ -142,7 +145,7 @@ void secuencial(unsigned char * arreglo, int *fila, int *maximo){
 
     // Abro la imagen de salida en modo apertura binaria
     FILE *imagen_salida1;
-    imagen_salida1 = fopen("imagen_salida1.pgm", "ab");
+    imagen_salida1 = fopen(nombre_salida1, "ab");
 
     // Añado los bordes de la imagen de entrada al arreglo de salida
     anyadir_bordes(arreglo, arreglo_salida, fila, maximo);
@@ -178,13 +181,14 @@ void secuencial(unsigned char * arreglo, int *fila, int *maximo){
 
 /*
 Descripción:    Recorre la imagen de entrada con un elemento estructural en forma de cruz de forma paralela
-                mediante el uso de SIMD, calcula el máximo local de los registros y lo escribe en la imagen de salida
+                mediante el uso de SSE, calcula el máximo local de los registros y lo escribe en la imagen de salida
 Entrada:        arreglo: arreglo que contiene los valores de la imagen de entrada
                 filas: entero que representa el número de filas y columnas de la imagen
                 maximo: entero que representa el valor máximo de la imagen
+                nombre_salida2: nombre de la imagen de salida del proceso paralelo
 Salida:         No posee retorno
 */
-void paralelo(unsigned char * arreglo, int *filas, int *maximo){
+void paralelo(unsigned char * arreglo, int *filas, int *maximo, char *nombre_salida2){
     // Creacion del registro unsigned char (8 bits) que almacena hasta 16 valores
     __m128i registro_main[5];
 
@@ -195,7 +199,7 @@ void paralelo(unsigned char * arreglo, int *filas, int *maximo){
 
     // Apertura binaria de imagen de salida
     FILE *imagen_salida;
-    imagen_salida = fopen("imagen_salida2.pgm", "ab");
+    imagen_salida = fopen(nombre_salida2, "ab");
     anyadir_bordes(arreglo, arreglo_salida, filas, maximo);
 
     // Recorro la imagen con el elemento estructural sin considerar el borde superior, inferior y laterales

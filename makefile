@@ -1,11 +1,12 @@
-run: main.o
-	./main.o -i bike.pgm -s imagen_salida1.pgm -p imagen_salida2.pgm
+programa: dilation.o funciones.o
+	gcc -o programa dilation.o funciones.o
 
-main.o: main.c funciones.o
-	gcc main.c -o main.o funciones.o -lm
+dilation.o: dilation.c funciones.h
+	gcc -Wall -c dilation.c
 
 funciones.o: funciones.c funciones.h
-	gcc -c funciones.c -lm
+	gcc -Wall -c funciones.c
 
 clean:
-	rm main.o funciones.o imagen_salida1.pgm imagen_salida2.pgm
+	rm -f programa *.o 
+	find . -type f \( -name '*.pgm' ! -name 'bike.pgm' ! -name 'lines.pgm' \) -exec rm -f {} +

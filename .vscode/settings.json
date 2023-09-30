@@ -2,6 +2,7 @@
     "files.associations": {
         "funciones.h": "c",
         "stdio.h": "c",
-        "immintrin.h": "c"
+        "immintrin.h": "c",
+        "time.h": "c"
     }
 }

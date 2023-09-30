@@ -1,4 +1,5 @@
 #include "funciones.h"
+#include <unistd.h> // Incluye unistd.h para optarg
 
 int main(int argc, char *argv[]){
     // Guarda las opciones ingresadas	
@@ -12,7 +13,7 @@ int main(int argc, char *argv[]){
     int filas, maximo;
 	
 	// Recibe entradas por línea de comandos
-  	while((option = getopt(argc, argv, "i:s:p")) != -1){     
+  	while((option = getopt(argc, argv, "i:s:p:")) != -1){     
         switch(option){         
             // Nombre de la imagen de entrada
             case 'i':
@@ -30,21 +31,21 @@ int main(int argc, char *argv[]){
             // Opciones invalidas
             case '?':
                 printf("La opción ingresada no existe: %c\n", optopt);
-                break;
+                return 1;
         }
     }
 
     unsigned char * arreglo = leer_imagen(imagen_entrada, &filas, &maximo);
-    crear_imagen_salida(&filas, &maximo);
+    crear_imagen_salida(&filas, &maximo, imagen_salida1, imagen_salida2);
     
     inicio = clock();
-    secuencial(arreglo, &filas, &maximo);
+    secuencial(arreglo, &filas, &maximo, imagen_salida1);
     fin = clock();
     tiempo = (double)(fin - inicio) / CLOCKS_PER_SEC;
     printf("Tiempo secuencial: %f\n", tiempo);
 
     inicio = clock();
-    paralelo(arreglo, &filas, &maximo);
+    paralelo(arreglo, &filas, &maximo, imagen_salida2);
     fin = clock();
     tiempo = (double)(fin - inicio) / CLOCKS_PER_SEC;
     printf("Tiempo paralelo: %f\n", tiempo);   
