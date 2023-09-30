@@ -2,14 +2,12 @@
 
 
 // Lee la imagen de formato .pmg 
-unsigned char* leer_imagen(char *imagen_entrada, int* filas){
+unsigned char* leer_imagen(char *imagen_entrada, int* filas, int* maximo){
     // Variables para leer la imagen
     FILE *imagen;
     unsigned char caracter1, caracter2;
-    int columnas, maximo;
+    int columnas;
     char *dimensiones;
-
-    
 
     //------------------------------------- podria ser dinamica -------------------------------
     char linea[100];
@@ -42,8 +40,8 @@ unsigned char* leer_imagen(char *imagen_entrada, int* filas){
     columnas = atoi(strtok(NULL, " "));
 
     linea_3 = fgets(linea, 100, imagen);
-    maximo = atoi(linea_3);
-    printf("maximo: %d\n", maximo);
+    *maximo = atoi(linea_3);
+    printf("maximo: %d\n", *maximo);
 
     // Imprimo las dimensiones de la imagen
     printf("Dimensiones de la imagen: %d x %d\n", *filas, columnas);
@@ -71,25 +69,51 @@ unsigned char* leer_imagen(char *imagen_entrada, int* filas){
 
 //  implementar paralelo usando SIMD
 
-void paralelo(unsigned char * arreglo, int *columna){
+void paralelo(unsigned char * arreglo, int *columna, int *maximo){
     // Creacion de registros
     __m128i registro_main[5];
     int modulo;
     int fila_actual, valor_final_fila;
     int filas = *columna;
-    
-    // Carga de registros cada 16
-    //////////////////////////////////////////////7
+
+    // Creo arreglo de salida
+    unsigned char *arreglo_salida = (unsigned char *)malloc((filas*filas)*sizeof(unsigned char));
+
+    // Creación imagen de salida
+    FILE *imagen_salida;
+    imagen_salida = fopen("imagen_salida2.pgm", "wb");
+    fprintf(imagen_salida, "P5\n");
+    fprintf(imagen_salida, "%d %d\n", filas, filas);
+    fprintf(imagen_salida, "%d\n", *maximo);
+
+    // Añado los bordes de la imagen al arreglo de salida
+    for (int i = 0; i < filas*filas; i += filas){
+        // Fila actual
+        fila_actual = (int)(i/filas);
+        //valor_final_fila = ((fila_actual)*filas);
+        // si es la primera fila o ultima fila, la escribo completa
+        if (fila_actual == 0 || fila_actual == (filas-1)){
+            for (int j = 0; j < filas; j++){
+                arreglo_salida[i+j] = arreglo[i+j];
+            }
+        }
+        // si no es la primera o ultima fila, escribo el primer y ultimo elemento
+        else{
+            arreglo_salida[i] = arreglo[i];
+            arreglo_salida[i+filas-1] = arreglo[i+filas-1];
+        }
+    }
     
     ////////////////////////////////////////////////////
     // -1 porque no considero el borde
-     for (int i = (filas+1); i < ((filas*filas)-1); i+=16) {
+     for (int i = (filas+1); i < ((filas*(filas-1)-2)); i+=16) {
         fila_actual = (int)(i/filas);
         valor_final_fila = ((fila_actual+1)*filas-2);
         
         //printf("fila actual: %i\n", fila_actual);
         //printf("El resultado es %s", (i + 16) < (filas - 2) ? "verdadero\n" : "falso\n");
         //printf("i+16 = %d       y      filas-2 = %d\n", (i+16), (filas - 2));
+        //printf("fila actual: %i    y    el valor i =%i\n", fila_actual, i);
 
         if ((i+16) < valor_final_fila){
             //cargar------------------------------------------------------
@@ -98,9 +122,14 @@ void paralelo(unsigned char * arreglo, int *columna){
             // Tercer registro (centro) parte de (fila*2)+1 (513) termina en (fila*3)-2
             // Cuarto registro (derecha) parte de (fila*3)+1 (513) termina en (fila*4)-2
             // Quinto registro (abajo) parte de (fila*4)+1 (513) termina en (fila*5)-2
-            //registro_main[0] = _mm_loadu_si128((__m128i *) &arreglo[i-filas-1]);
-            
-            printf("fila actual: %i    y    el valor i =%i\n", fila_actual, i);
+
+            registro_main[0] = _mm_loadu_si128((__m128i *) &arreglo[i-filas]);  // arriba
+            registro_main[1] = _mm_loadu_si128((__m128i *) &arreglo[i-1]);      // izquierda
+            registro_main[2] = _mm_loadu_si128((__m128i *) &arreglo[i]);        // centro
+            registro_main[3] = _mm_loadu_si128((__m128i *) &arreglo[i+1]);      // derecha
+            registro_main[4] = _mm_loadu_si128((__m128i *) &arreglo[i+filas]);  // abajo
+
+            //printf("fila actual: %i    y    el valor i =%i\n", fila_actual, i);
 
         }
         
@@ -108,6 +137,11 @@ void paralelo(unsigned char * arreglo, int *columna){
         else if ((i+16) == valor_final_fila){    
             // cargo registros---------------------------------------------------------------
 
+            registro_main[0] = _mm_loadu_si128((__m128i *) &arreglo[i-filas]);  // arriba
+            registro_main[1] = _mm_loadu_si128((__m128i *) &arreglo[i-1]);      // izquierda
+            registro_main[2] = _mm_loadu_si128((__m128i *) &arreglo[i]);        // centro
+            registro_main[3] = _mm_loadu_si128((__m128i *) &arreglo[i+1]);      // derecha
+            registro_main[4] = _mm_loadu_si128((__m128i *) &arreglo[i+filas]);  // abajo
 
             fila_actual = (int)(i/filas);
             // Se obtiene el primer valor de la siguiente fila y se retrocede 15 para que el for lo mueva a la fila siguiente + 1 columna.
@@ -116,6 +150,7 @@ void paralelo(unsigned char * arreglo, int *columna){
         // Si llega al final de la columna de la imagen, creo un arreglo aux de 0s de 3 filas y 16 columnas 
         else if ((i+16) > valor_final_fila){
             //modulo = (filas-2)%16;SS
+
             // crea arreglo aux, 16 para guardar los registros, +1 porque necesito guardar desde la columna anterior, +1 para que 
             // el registro derecha pueda llegar hasta el final
             int arreglo_aux[3*18] = {0};
@@ -131,9 +166,16 @@ void paralelo(unsigned char * arreglo, int *columna){
 
                 i_aux += 1;
             }
-            
-            // cargar a registros con arreglo aux----------------------------------
 
+            // recorro el arreglo aux y lo cargo en los registros
+            int filas_aux = 18;
+            for (int j = 1; j < 2; j ++){
+                registro_main[0] = _mm_loadu_si128((__m128i *) &arreglo_aux[j]);                    // arriba
+                registro_main[1] = _mm_loadu_si128((__m128i *) &arreglo_aux[j+filas_aux-1]);        // izquierda
+                registro_main[2] = _mm_loadu_si128((__m128i *) &arreglo_aux[j+filas_aux]);          // centro
+                registro_main[3] = _mm_loadu_si128((__m128i *) &arreglo_aux[j+filas_aux+1]);        // derecha
+                registro_main[4] = _mm_loadu_si128((__m128i *) &arreglo_aux[j+(2*filas_aux)]);      // abajo
+            }
 
             fila_actual = (int)(i/filas);
             
@@ -141,11 +183,22 @@ void paralelo(unsigned char * arreglo, int *columna){
             i = ((fila_actual+1)*filas) - 15;
         }
         
-    
+        // Calculo de maximo de los 5 registros
+        __m128i maximo = _mm_max_epu8(registro_main[0], registro_main[1]);
+        maximo = _mm_max_epu8(maximo, registro_main[2]);
+        maximo = _mm_max_epu8(maximo, registro_main[3]);
+        maximo = _mm_max_epu8(maximo, registro_main[4]);
+
+        // Guardo el maximo en el arreglo de salida
+        _mm_storeu_si128((__m128i *) &arreglo_salida[i], maximo);    
 
      }
 
-    
+     // Escribo la imagen de salida
+    fwrite(arreglo_salida, sizeof(unsigned char), (filas*filas), imagen_salida);
+    fclose(imagen_salida);
+    free(arreglo_salida);
+    //free(registro_main);    
 }
 
 

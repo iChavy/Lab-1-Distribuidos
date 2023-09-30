@@ -6,7 +6,7 @@ int main(int argc, char *argv[]){
 	//Nombre de la imagen de entrada y de las imagenes de salida
     char *imagen_entrada, *imagen_salida1, *imagen_salida2;
 
-    int filas;
+    int filas, maximo;
 	
 	// Recibe entradas por línea de comandos
   	while((option = getopt(argc, argv, "i:s:p")) != -1){     
@@ -31,11 +31,12 @@ int main(int argc, char *argv[]){
         }
     }
 
-    unsigned char * arreglo = leer_imagen(imagen_entrada, &filas);
-    paralelo(arreglo, &filas);
+    unsigned char * arreglo = leer_imagen(imagen_entrada, &filas, &maximo);
+    paralelo(arreglo, &filas, &maximo);
     
     // Liberar memoria
     free(arreglo);
+    printf("Se ha liberado la memoria\n");
 
 
     /*for(int i = 0; i < (512*512); i++){

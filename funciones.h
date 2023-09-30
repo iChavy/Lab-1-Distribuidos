@@ -13,5 +13,5 @@
 // definicion de las funciones
 //float sumar(float, float);
 
-unsigned char* leer_imagen(char *imagen_entrada, int* filas);
-void paralelo(unsigned char * arreglo, int * filas);
+unsigned char* leer_imagen(char *imagen_entrada, int* filas, int* maximo);
+void paralelo(unsigned char * arreglo, int * filas, int * maximo);
